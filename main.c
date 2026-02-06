@@ -1,8 +1,8 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 
-static int a;
-
-int main() 
+int main(void)
 {
-    int b = abs(a);
+    printf("%u\n", 112 ^ 0);
 }
