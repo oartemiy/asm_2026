@@ -42,6 +42,7 @@ void build(int pos, int m)
 
 int main()
 {
+    
     scanf("%d %d %d", &N, &K, &M);
 
     fact[0] = 1;
