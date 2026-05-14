@@ -1,182 +1,54 @@
-extern scanf, printf, malloc, free
 
-section .data
-    iformat db `%d`, 0
-    oformat db `%d `, 0
-    space db ` `, 0
-    newline db 10, 0
 
-section .bss
-    ans_trace resq 1
-    ans_arr resd 1
-    tmp_trace resq 1
-    tmp_arr resd 1
-    ans_M resd 1
-    N resd 1
-    M resd 1
-    temp_M resd 1
-
-section .text
 global main
 main:
-    push ebp
-    mov ebp, esp
-    and esp, -16
+    ; floating pointing numbers...
+    ; [msb][exp][mantisa]
+    ;   1    E      M        bits
+    ; for normal form numbers ~ -10^38 ... 10^38 ~ 
+    ; = (-1)^msb * ( 1 + mantissa / (2^M) ) * 2^(exp - offset)
+    ;                 [1; 2)
+    ; offset = 2 ^ (M - 1) - 1
 
-    push N
-    push iformat
-    call scanf
-    add esp, 8
+    ; ex. float: E = 8 bits, M = 27 bits, offset = 127
+    ; ex. double: E = 11 bits, M = 52 bits, offset = 1023
+    ; ex. long double (10bytes = 80 bist): E = 15 bits, M = 64 bits (1(hidden mantissa bit) + 63)
 
-    xor esi, esi
-.Lfor_begin:
-    cmp esi, dword [N]
-    je .Lfor_end
+    ; denormonlize form (exp = 0) ~ 2^-45 ... 
+    ; = (-1)^msb * (mantissa / (2^M) ) * 2^(-offset)
+    ;               1 - скрытый бит мантиссы 
 
-    push esi
-    push M
-    push iformat
-    call scanf
-    add esp, 8
-    pop esi
+    ; special numbers: 
+    ; 1) e = 1...1;
+    ;  1.1) m = 0; ±inf
+    ;  1.2) m != 0; NaN
+    ; 2) e = 0...0;
+    ;  2.1) m = 0; ±0
+    ;  2.2) m != 0; denormolize form
 
-    mov eax, dword [M]
-    mov dword [temp_M], eax
-    imul eax, eax
-    mov dword [M], eax
-    imul eax, dword 4
+    ; Машинная точность: eps > 0; 1 + eps != 1
+    ; a !=(real) b; a == b <=> 1 < (a / b) < 1 + eps
+    ; eps = 2 ^ -(M + 1)
+    ; ex. float: eps = 2^(-24) ~ 5.96 * 10^-8 семь знаков уверенно
+    ; ex. double: eps = 2^(-53) ~ 1.11 * 10^-16 пятнадцать знаков уверенно
+    ; a == b !!! abs(a - b) < eps
 
-    push eax
-    call malloc
-    add esp, 4
-    mov dword [tmp_arr], eax
-    mov edi, eax
-    xor ecx, ecx
-.Lread_begin:
-    cmp ecx, dword [M]
-    je .Lread_end
-    push ecx
-    push edi
-    push iformat
-    call scanf
-    add esp, 8
-    pop ecx
-    add edi, 4
-    inc ecx
-    jmp .Lread_begin
-.Lread_end:
+    ; exerseizes
+    ; 1.0 float
+    ; 0  0111..111   0000..000
 
-    xor ecx, ecx
-    mov edi, dword [tmp_arr]
-    mov dword [tmp_trace], 0
-    mov dword [tmp_trace+4], 0
-.Ltrace_calc_begin:
+    ; -3/8 = -0.011_2 = 1.1 * 2 ^-2 // 125 
+    ; 1  125_2   10000000...
 
-    cmp ecx, dword [M]
-    jge .Ltrace_calc_end
-    mov eax, dword [edi + 4*ecx]
-    cdq
-    add dword [tmp_trace], eax
-    adc dword [tmp_trace+4], edx ; with carry flag
-    add ecx, dword [temp_M]
-    inc ecx
-    jmp .Ltrace_calc_begin
-.Ltrace_calc_end:
+    ; 6.5 = 110.1_2 = 1.101 * 2 ^ 2
+    ; 0   10000001 1010...0
 
-    cmp esi, 0
-    jne .Lno_first
+    ; 0.1 = 0.0(0011)0011 = 1.10011 * 2 ^ -4 ; exp = 123
+    ; 0.1 * 2 = 0.2
+    ; 0.2 * 2 = 0.4
+    ; 0.4 * 2 = 0.8
+    ; 0  01111011 1(0011)(0011)(0011)(0011)(0011)(0011)01
 
-    mov eax, dword [tmp_trace]
-    mov edx, dword [tmp_trace+4]
-    mov dword [ans_trace], eax
-    mov dword [ans_trace+4], edx
-    mov eax, dword [tmp_arr]
-    mov dword [ans_arr], eax
-    mov eax, dword [temp_M]
-    mov dword [ans_M], eax
-    inc esi
-    jmp .Lfor_begin
 
-.Lno_first:
-    mov eax, dword [tmp_trace]
-    mov edx, dword [tmp_trace+4]
-    cmp edx, dword [ans_trace+4]
-    jl .Lfree
-    je .Lequal
-
-    push dword [ans_arr]
-    call free
-    add esp, 4
-    mov eax, dword [tmp_arr]
-    mov dword [ans_arr], eax
-    mov eax, dword [tmp_trace]
-    mov edx, dword [tmp_trace+4]
-    mov dword [ans_trace], eax
-    mov dword [ans_trace+4], edx
-    mov eax, dword [temp_M]
-    mov dword [ans_M], eax
-    inc esi
-    jmp .Lfor_begin
-
-.Lequal:
-    cmp eax, dword [ans_trace]
-    jbe .Lfree ; eax - unsigned part of tmp_trace
-    push dword [ans_arr]
-    call free
-    add esp, 4
-    mov eax, dword [tmp_arr]
-    mov dword [ans_arr], eax
-    mov eax, dword [tmp_trace]
-    mov edx, dword [tmp_trace+4]
-    mov dword [ans_trace], eax
-    mov dword [ans_trace+4], edx
-    mov eax, dword [temp_M]
-    mov dword [ans_M], eax
-    inc esi
-    jmp .Lfor_begin
-
-.Lfree:
-    push dword [tmp_arr]
-    call free
-    add esp, 4
-    inc esi
-    jmp .Lfor_begin
-
-.Lfor_end:
-
-    xor ecx, ecx
-    mov edi, dword [ans_arr]
-.Lprint_begin_1:
-    cmp ecx, dword [ans_M]
-    je .Lprint_end_1
-    push ecx
-    xor ecx, ecx
-.Lprint_begin_2:
-    cmp ecx, dword [ans_M]
-    je .Lprint_end_2
-    push ecx
-    push dword [edi]
-    push oformat
-    call printf
-    add esp, 8
-    pop ecx
-    add edi, 4
-    inc ecx
-    jmp .Lprint_begin_2
-.Lprint_end_2:
-    push newline
-    call printf
-    add esp, 4
-    pop ecx
-    inc ecx
-    jmp .Lprint_begin_1
-.Lprint_end_1:
-
-    push dword [ans_arr]
-    call free
-    add esp, 4
-
-    mov esp, ebp
-    pop ebp
     xor eax, eax
     ret
