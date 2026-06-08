@@ -1,15 +1,19 @@
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
 
-union Foo {
-    float a;
-    unsigned c;
-};
+// #include <stdio.h>
+#include <stdio.h>
+#include <string.h>
+int a;
+static int b = 23;
+
+int c;
+
+int func(int, int);
 
 int main(void) {
-    union Foo w;
-    w.a = -0.0;
-    printf("%u\n", w.c);
+    // printf("%u\n", sizeof(double));
+    FILE* fin = fopen("input.bin", "rb");
+    fread(&a, sizeof(a), 1, fin);
+
+    fclose(fin);
     return 0;
 }
