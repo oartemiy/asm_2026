@@ -1,8 +1,6 @@
 
-// #include <stdio.h>
 #include <stdio.h>
 #include <string.h>
-int a;
 static int b = 23;
 
 int c;
@@ -10,10 +8,8 @@ int c;
 int func(int, int);
 
 int main(void) {
-    // printf("%u\n", sizeof(double));
-    FILE* fin = fopen("input.bin", "rb");
-    fread(&a, sizeof(a), 1, fin);
+    char buf[10];
+    memset(buf, 0, 10);
+    printf("%d\n", buf[9]);
+    return 0; }
 
-    fclose(fin);
-    return 0;
-}
