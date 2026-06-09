@@ -26,13 +26,11 @@ main:
     call scanf
     add esp, 12
 
-    xor ecx, ecx
+    xor esi, esi
 .Lfor_begin:
-    cmp ecx, dword [n]
+    cmp esi, dword [n]
 
     je .Lfor_end
-
-    push ecx
 
     push y
     push b
@@ -51,26 +49,25 @@ main:
     fcomip st0, st1
     fstp qword[result]
 
+    ; no pop no push nothing, that chages eflags
+
     jbe .Lprint
-    pop ecx
     jmp .Lskip
 
 
 .Lprint:
-    pop ecx
-    push ecx
+    push esi
     push fmt_output_idx
     call printf
-    add esp, 4
-    pop ecx
+    add esp, 8
 
     
-
 .Lskip:
-    inc ecx
+    inc esi
     jmp .Lfor_begin
 
 .Lfor_end:
+
     mov esp, ebp
     pop ebp
     xor eax, eax
