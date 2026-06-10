@@ -1,73 +1,71 @@
-extern printf, scanf
+extern printf, scanf, calloc, memcpy, fread, fprintf, fopen, fclose
 
-section .data
-    fmt_input_triple db "%lf %lf %lf", 0
-    fmt_input_n_s db "%d %lf", 0
-    fmt_output_idx db "%d", 10, 0
-    fmt_double db "%lf", 10, 0
-    double_two dq 2.0
+; calle-safe: ebx esi edi ebp
+; caller-sefe: eax ecx edx
+
+section .rodata
+    file_in_name db "input.bin", 0
+    file_out_name db "output.txt", 0
+    fmt_out db "%lld", 10, 0
+    binary db "rb", 0
 
 section .bss
-    n resd 1
-    s resq 1
-    a resq 1
-    b resq 1
-    y resq 1
-    result resq 1
+    file_in resd 1
+    file_out resd 1
+    cur resb 1
+    ans resq 1
+
 
 section .text
 global main
 main:
     push ebp
     mov ebp, esp
-
-    push s
-    push n
-    push fmt_input_n_s
-    call scanf
-    add esp, 12
-
-    xor esi, esi
-.Lfor_begin:
-    cmp esi, dword [n]
-
-    je .Lfor_end
-
-    push y
-    push b
-    push a
-    push fmt_input_triple
-    call scanf
-    add esp, 16
-
-    fld qword[y]
-    fsin
-    fmul qword[a]
-    fmul qword[b]
-    fdiv qword[double_two]
-
-    fld qword[s]
-    fcomip st0, st1
-    fstp qword[result]
-
-    ; no pop no push nothing, that chages eflags
-
-    jbe .Lprint
-    jmp .Lskip
-
-
-.Lprint:
-    push esi
-    push fmt_output_idx
-    call printf
+    push binary
+    push file_in_name
+    call fopen
     add esp, 8
 
-    
-.Lskip:
-    inc esi
-    jmp .Lfor_begin
+    mov dword[file_in], eax
 
-.Lfor_end:
+    xor eax, eax
+    xor edx, edx
+
+    mov dword[ans], dword 0
+    mov dword[ans + 4], dword 0
+
+.Lread_byte_begin:
+    push dword[file_in]
+    push 1
+    push 1
+    push cur
+    call fread
+    add esp, 16
+    
+    cmp eax, dword 0
+    je .Lread_byte_end
+    
+    movsx eax, byte[cur]
+
+    cdq
+
+    add dword[ans], eax
+    adc dword[ans + 4], edx
+
+    jmp .Lread_byte_begin
+
+
+.Lread_byte_end:
+
+    push dword[ans + 4]
+    push dword[ans]
+    push fmt_out
+    call printf
+    add esp, 12
+
+    push dword[file_in]
+    call fclose
+    add esp, 4
 
     mov esp, ebp
     pop ebp
