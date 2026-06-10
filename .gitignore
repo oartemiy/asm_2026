@@ -3,3 +3,6 @@ main
 demo_variant.md
 training-guide.pdf
 training-tasks.md
+input.bin
+main.py
+tmp.asm

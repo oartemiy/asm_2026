@@ -1,80 +1,75 @@
-extern printf, scanf, calloc, memcpy
+extern printf, scanf
 
-; calle-safe: ebx esi edi ebp
-; caller-sefe: eax ecx edx
+section .data
+    fmt_input_triple db "%lf %lf %lf", 0
+    fmt_input_n_s db "%d %lf", 0
+    fmt_output_idx db "%d", 10, 0
+    fmt_double db "%lf", 10, 0
+    double_two dq 2.0
 
 section .bss
-    cur resd 1
-    pos resd 1
-    res resd 1
-
+    n resd 1
+    s resq 1
+    a resq 1
+    b resq 1
+    y resq 1
+    result resq 1
 
 section .text
-global file_name
-; char *file_name(const char *str, size_t pos);
-file_name:
+global main
+main:
     push ebp
     mov ebp, esp
 
-    mov eax, dword[ebp + 8]
-    mov dword[cur], eax
-    mov eax, dword[ebp + 12]
-    mov dword[pos], eax
+    push s
+    push n
+    push fmt_input_n_s
+    call scanf
+    add esp, 12
 
-    mov eax, dword[pos]
-    add dword[cur], eax
+    xor esi, esi
+.Lfor_begin:
+    cmp esi, dword [n]
 
-.Lwhile_shash_begin:
-    mov eax, dword[cur]
-    mov al, byte[eax]
-    cmp al, '/'
-    jne .Lnot_equal_shash
-    mov esi, dword[cur]
-    inc esi
-    jmp .Lwhile_shash_end
+    je .Lfor_end
 
-.Lnot_equal_shash:
-    inc dword[cur]
-    jmp .Lwhile_shash_begin
+    push y
+    push b
+    push a
+    push fmt_input_triple
+    call scanf
+    add esp, 16
 
-.Lwhile_shash_end:
+    fld qword[y]
+    fsin
+    fmul qword[a]
+    fmul qword[b]
+    fdiv qword[double_two]
 
-.Lwhile_space_begin:
-    mov eax, dword[cur]
-    mov al, byte[eax]
-    cmp al, ' '
-    jne .Lnot_equal_space
-    mov edi, dword[cur]
-    dec edi
-    jmp .Lwhile_space_end
+    fld qword[s]
+    fcomip st0, st1
+    fstp qword[result]
 
-.Lnot_equal_space:
-    inc dword[cur]
-    jmp .Lwhile_space_begin
+    ; no pop no push nothing, that chages eflags
 
-.Lwhile_space_end:
-    mov eax, edi
-    sub eax, esi
-    add eax, 2
+    jbe .Lprint
+    jmp .Lskip
 
-    push 1
-    push eax
-    call calloc
+
+.Lprint:
+    push esi
+    push fmt_output_idx
+    call printf
     add esp, 8
 
-    mov dword[res], eax
+    
+.Lskip:
+    inc esi
+    jmp .Lfor_begin
 
-    mov eax, edi
-    sub eax, esi
-    inc eax
-
-    push eax
-    push esi
-    push dword[res]
-    call memcpy
-    add esp, 12
+.Lfor_end:
 
     mov esp, ebp
     pop ebp
-
+    xor eax, eax
     ret
